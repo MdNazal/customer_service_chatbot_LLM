@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+dataset/arxiv_cs.csv
+dataset/dataset.csv
+dataset/medquad.csv
+dataset/MedQuAD/
+faiss_index/
+faiss_index_arxiv/
+faiss_index_medical/
