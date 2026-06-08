@@ -11,12 +11,15 @@ from language_helper import (
 from entity_recognition import extract_medical_entities, has_medical_entities, format_entities_for_display
 from knowledge_updater import (
     update_nullclass_knowledge, update_medical_knowledge,
-    auto_update_if_needed, get_last_updated
+    auto_update_if_needed, get_last_updated, start_scheduler
 )
 from visualizer import extract_keywords, get_category_labels, build_bar_chart_data
 import csv
 import io
 from collections import Counter
+
+# Start background scheduler for periodic external updates
+start_scheduler(interval_minutes=30)
 
 st.title("CUSTOMER SERVICE & RESEARCH CHATBOT 🤖")
 
@@ -39,12 +42,14 @@ if "Multi-Modal" not in mode:
         current_mode = "nullclass" if "Nullclass" in mode else "medical" if "Medical" in mode else "arxiv"
 
         if current_mode != "arxiv":
-            last_updated, row_count = get_last_updated(current_mode)
+            last_updated, row_count, last_fetch = get_last_updated(current_mode)
             col1, col2 = st.columns(2)
             with col1:
                 st.caption(f"🕒 Last updated: {last_updated if last_updated else 'Never'}")
             with col2:
                 st.caption(f"📄 Documents indexed: {row_count if row_count else 0}")
+            if last_fetch:
+                st.caption(f"🌐 Last external fetch: {last_fetch}")
 
         st.subheader("Create / Rebuild Knowledgebase")
         btn = st.button("🔨 Create Knowledgebase")
