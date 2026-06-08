@@ -1,7 +1,6 @@
 .env
 __pycache__/
 *.pyc
-dataset/dataset.csv
 dataset/MedQuAD/
 faiss_index/
 faiss_index_arxiv/
