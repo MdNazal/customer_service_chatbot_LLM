@@ -5,3 +5,4 @@ dataset/MedQuAD/
 faiss_index/
 faiss_index_arxiv/
 faiss_index_medical/
+venv/

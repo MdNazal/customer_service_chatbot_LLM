@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_helper import get_qa_chain, create_vector_db
 from medquad_helper import get_medical_qa_chain, create_medical_vector_db
-from arxiv_helper import get_arxiv_qa_chain, create_arxiv_vector_db, search_papers
+from arxiv_helper import get_arxiv_qa_chain, create_arxiv_vector_db, search_papers, summarize_paper, extract_paper_info
 from multimodal_helper import analyze_image, chat_with_image, generate_text_explanation
 from sentiment_helper import detect_sentiment
 from language_helper import (
@@ -164,7 +164,6 @@ if "Multi-Modal" in mode:
     question = st.chat_input("Ask a question about the image or any topic...")
 
     if question:
-        # Detect language
         lang_code = detect_language(question)
         lang_name = get_language_name(lang_code)
 
@@ -232,6 +231,30 @@ elif "arXiv" in mode:
                 st.info("No category data available.")
 
     st.divider()
+
+    # ── SUMMARIZATION ──
+    st.subheader("📝 Summarize a Paper")
+    st.caption("Enter a paper title or topic to get a structured summary.")
+    summary_query = st.text_input("Paper title or topic:", key="summary")
+    if summary_query:
+        with st.spinner("Summarizing... this may take a moment."):
+            summary = summarize_paper(summary_query)
+        st.markdown("**Summary:**")
+        st.write(summary)
+        st.divider()
+
+     # ── INFORMATION EXTRACTION ──
+    st.subheader("🔬 Extract Paper Information")
+    st.caption("Extract structured information from papers on a topic.")
+    extract_query = st.text_input("Enter topic for information extraction:", key="extract")
+    if extract_query:
+        with st.spinner("Extracting information..."):
+            info = extract_paper_info(extract_query)
+        st.markdown("**Extracted Information:**")
+        st.write(info)
+        st.divider()
+        
+    # ── CHAT ──
     st.subheader("💬 Ask the Research Expert")
     st.caption("Supports English, Malayalam, Arabic, Spanish and Hindi.")
 

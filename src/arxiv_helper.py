@@ -8,6 +8,8 @@ from langchain_groq import ChatGroq
 from langchain_core.documents import Document
 from dotenv import load_dotenv
 from language_helper import build_multilingual_prompt
+from langchain_classic.chains.summarize import load_summarize_chain
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
@@ -117,3 +119,70 @@ def search_papers(query, k=5):
             "abstract": doc.page_content.split("Abstract:")[-1].strip()
         })
     return papers
+
+def summarize_paper(title_or_query):
+    """
+    Find a paper by title/query and return a structured summary
+    using LangChain's map-reduce summarization chain.
+    """
+    vectordb = FAISS.load_local(
+        vectordb_file_path,
+        embeddings,
+        allow_dangerous_deserialization=True
+    )
+
+    # Find most relevant paper
+    results = vectordb.similarity_search(title_or_query, k=3)
+
+    if not results:
+        return "No relevant papers found for summarization."
+
+    # Split text for summarization
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=100
+    )
+    split_docs = text_splitter.split_documents(results)
+
+    # Use map-reduce summarization chain
+    summary_chain = load_summarize_chain(
+        llm=llm,
+        chain_type="map_reduce"
+    )
+
+    summary = summary_chain.run(split_docs)
+    return summary
+
+def extract_paper_info(query):
+    """
+    Extract structured information from retrieved papers:
+    - Main topic/problem
+    - Methodology used
+    - Key findings/results
+    - Contributions
+    """
+    vectordb = FAISS.load_local(
+        vectordb_file_path,
+        embeddings,
+        allow_dangerous_deserialization=True
+    )
+
+    results = vectordb.similarity_search(query, k=3)
+    context = "\n\n".join([doc.page_content for doc in results])
+
+    prompt = f"""Given these research paper abstracts, extract and structure the following information:
+
+PAPERS:
+{context}
+
+Extract:
+1. Main Problem/Topic being addressed
+2. Methodology/Approach used
+3. Key Results/Findings
+4. Main Contributions to the field
+
+Format your response clearly with these four sections."""
+
+    from langchain_core.messages import HumanMessage
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return response.content
