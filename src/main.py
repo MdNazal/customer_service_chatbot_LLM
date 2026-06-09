@@ -2,7 +2,7 @@ import streamlit as st
 from langchain_helper import get_qa_chain, create_vector_db
 from medquad_helper import get_medical_qa_chain, create_medical_vector_db
 from arxiv_helper import get_arxiv_qa_chain, create_arxiv_vector_db, search_papers, summarize_paper, extract_paper_info
-from multimodal_helper import analyze_image, chat_with_image, generate_text_explanation
+from multimodal_helper import analyze_image, chat_with_image, generate_text_explanation, generate_image
 from sentiment_helper import detect_sentiment
 from language_helper import (
     detect_language, get_language_name,
@@ -30,7 +30,7 @@ mode = st.selectbox(
         "🏫 Customer Service (Nullclass)",
         "🏥 Medical Q&A (MedQuAD)",
         "🔬 Research Expert (arXiv CS)",
-        "🎨 Multi-Modal Chat"
+        "🎨 Multi-Modal Chat (Gemini AI)"
     ]
 )
 
@@ -127,7 +127,26 @@ if "Multi-Modal" not in mode:
 
 # ── MULTI-MODAL MODE ──
 if "Multi-Modal" in mode:
-    st.subheader("🎨 Multi-Modal Chat")
+    st.subheader("🎨 Multi-Modal Chat (Powered by Google Gemini AI)")
+    st.caption("Upload an image for Gemini Vision analysis, or generate images from text prompts.")
+
+    # ── IMAGE GENERATION ──
+    st.subheader("🖼️ Generate an Image")
+    st.caption("Describe an image and generate it using AI.")
+    gen_prompt = st.text_input("Describe the image you want to generate:", key="gen_prompt")
+    if gen_prompt:
+        with st.spinner("Generating image..."):
+            image_url = generate_image(gen_prompt)
+        if image_url:
+            st.image(image_url, caption=f"Generated: {gen_prompt}", use_container_width=True)
+            st.markdown(f"[🔗 Open image in browser]({image_url})")
+        else:
+            st.error("Could not generate image. Please try again.")
+
+    st.divider()
+
+    # ── IMAGE UNDERSTANDING ──
+    st.subheader("🔍 Image Understanding (Gemini Vision)")
     st.caption("Upload an image and ask questions about it.")
 
     if "multimodal_chat_history" not in st.session_state:
@@ -146,11 +165,11 @@ if "Multi-Modal" in mode:
         st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
         if len(st.session_state.multimodal_chat_history) == 0:
-            with st.spinner("Analyzing image..."):
+            with st.spinner("Analyzing image with Gemini Vision..."):
                 analysis = analyze_image(uploaded_image)
             st.session_state.multimodal_chat_history.append({
                 "role": "assistant",
-                "content": f"**Image Analysis:**\n\n{analysis}"
+                "content": f"**Gemini Vision Analysis:**\n\n{analysis}"
             })
 
     st.divider()
@@ -243,7 +262,7 @@ elif "arXiv" in mode:
         st.write(summary)
         st.divider()
 
-     # ── INFORMATION EXTRACTION ──
+    # ── INFORMATION EXTRACTION ──
     st.subheader("🔬 Extract Paper Information")
     st.caption("Extract structured information from papers on a topic.")
     extract_query = st.text_input("Enter topic for information extraction:", key="extract")
@@ -253,7 +272,7 @@ elif "arXiv" in mode:
         st.markdown("**Extracted Information:**")
         st.write(info)
         st.divider()
-        
+
     # ── CHAT ──
     st.subheader("💬 Ask the Research Expert")
     st.caption("Supports English, Malayalam, Arabic, Spanish and Hindi.")
